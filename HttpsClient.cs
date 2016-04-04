@@ -145,27 +145,7 @@ namespace laba_http_client
 
     }
 
-    // The RequestState class passes data across async calls.
-    //public class RequestState
-    //{
-    //    const int BufferSize = 1024;
-    //    public StringBuilder RequestData;
-    //    public byte[] BufferRead;
-    //    public WebRequest Request;
-    //    public Stream ResponseStream;
-    //    // Create Decoder for appropriate enconding type.
-    //    public Decoder StreamDecode = Encoding.UTF8.GetDecoder(); //UTF8??
 
-    //    public RequestState()
-    //    {
-    //        BufferRead = new byte[BufferSize];
-    //        RequestData = new StringBuilder(String.Empty);
-    //        Request = null;
-    //        ResponseStream = null;
-    //    }
-      
-    //}
-    
     class HttpsClient
     {
         //public string toadress { get; set; }
