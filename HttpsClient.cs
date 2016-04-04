@@ -69,10 +69,7 @@ namespace laba_http_client
         }
     }
 
-    //http: //www.codeproject.com/Articles/5719/Simple-encrypting-and-decrypting-data-in-C
-    //https: //msdn.microsoft.com/ru-ru/library/system.security.cryptography.aes(v=vs.110).aspx
-    //http: //www.dreamincode.net/forums/topic/156922-aes-encryption-and-c%23/
-    //http: //www.sql.ru/forum/829584/ispolzovanie-kodirovaniya-v-tekstovyy-format-izmenyaet-baytovuu-strukturu-faylov
+    
     public class AesEncruptAlg
     {
         //private byte[] iv;
