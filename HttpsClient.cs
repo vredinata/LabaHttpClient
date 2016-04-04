@@ -8,6 +8,7 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Runtime.Serialization.Json;
 using Newtonsoft.Json;
+using System.Threading;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
@@ -144,10 +145,32 @@ namespace laba_http_client
 
     }
 
-   class HttpsClient
+    // The RequestState class passes data across async calls.
+    //public class RequestState
+    //{
+    //    const int BufferSize = 1024;
+    //    public StringBuilder RequestData;
+    //    public byte[] BufferRead;
+    //    public WebRequest Request;
+    //    public Stream ResponseStream;
+    //    // Create Decoder for appropriate enconding type.
+    //    public Decoder StreamDecode = Encoding.UTF8.GetDecoder(); //UTF8??
+
+    //    public RequestState()
+    //    {
+    //        BufferRead = new byte[BufferSize];
+    //        RequestData = new StringBuilder(String.Empty);
+    //        Request = null;
+    //        ResponseStream = null;
+    //    }
+      
+    //}
+    
+    class HttpsClient
     {
         //public string toadress { get; set; }
-
+        public static ManualResetEvent allDone = new ManualResetEvent(false);
+        const int BUFFER_SIZE = 1024;
 
         static void Main(string[] args)
         {
@@ -157,6 +180,7 @@ namespace laba_http_client
             string vklink = "https://vk.com/anyuser";
             string Subsystem2Ansver;
             string filejson="";
+
             int EncAlgType = 0; //0 -aes
             byte[] iv = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -190,23 +214,14 @@ namespace laba_http_client
                 if (status == WebExceptionStatus.ProtocolError)
                 {
                     HttpWebResponse httpResponse = (HttpWebResponse)ex.Response;
-                    printLog("Статусный код ошибки: " + (int)httpResponse.StatusCode + " " + httpResponse.StatusCode);
+                    printLog("The error status code:" + (int)httpResponse.StatusCode + " " + httpResponse.StatusCode);
                 }
             }
             catch (Exception e)
             {
                 printLog(e.Message);
             }
-            //// Make a reference to a directory.
-            //DirectoryInfo di = new DirectoryInfo("c:\\");
-            //// Get a reference to each file in that directory.
-            //FileInfo[] fiArr = di.GetFiles();
-            //// Display the names and sizes of the files.
-            //Console.WriteLine("The directory {0} contains the following files:", di.Name);
-            //foreach (FileInfo f in fiArr)
-            //    Console.WriteLine("The size of {0} is {1} bytes.", f.Name, f.Length);
-
-            //  Exception http: //metanit.com/sharp/net/2.4.php
+            
             printLog("Exit");
         }
 
@@ -221,9 +236,36 @@ namespace laba_http_client
             return ansver;
         }
 
-        public static void AsynchPost(string URI, string jsonstr)
-        { 
+        //public static void AsynchPost(string URI, string jsonstr, string wtoken)
+        public static void AsynchPost(string URI, string jsonstr) //asynch???
+        {
+            // Create the request object.
+            WebRequest wreq = WebRequest.Create(URI);
+            wreq.ContentType = "application/json";  //"application/x-www-form-urlencoded"
+            wreq.Method = "POST";
+            //req.Headers.Add("Token: " + wtoken);
+            //We need to count how many bytes we're sending. Post'ed Faked Forms should be name=value&
+            byte[] bytes = System.Text.Encoding.ASCII.GetBytes(jsonstr); //UTF8 - ?
+            wreq.ContentLength = bytes.Length;
+            //wreq.ContentLength = jsonstr.Length;
 
+            IAsyncResult getRequestStream = wreq.BeginGetRequestStream(null, null);
+            var writer = new StreamWriter(wreq.EndGetRequestStream(getRequestStream));
+            writer.Write(jsonstr);
+            writer.Close();
+
+           //Посылаем запрос
+            wreq.BeginGetResponse(OnAsyncCallback, wreq );
+            
+        }
+
+        private static void OnAsyncCallback(IAsyncResult asyncResult)
+        {
+            var httpWebRequest = (HttpWebRequest)asyncResult.AsyncState;
+            WebResponse response = httpWebRequest.EndGetResponse(asyncResult);
+            var reader = new StreamReader(response.GetResponseStream());
+            string str = reader.ReadToEnd();
+            printLog("received the server response: "+str);  //как понять какой запрос? счетчик?
         }
 
         public static string HttpGet(string URI)
@@ -242,8 +284,7 @@ namespace laba_http_client
             //Add these, as we're doing a POST
             req.ContentType = "application/json";  //"application/x-www-form-urlencoded"
             req.Method = "POST";
-            //string tokensrt="Token: " + wtoken; //токен от второй подсистемы
-            //req.Headers.Add(tokenstr);
+            //req.Headers.Add("Token: " + wtoken);
             //We need to count how many bytes we're sending. Post'ed Faked Forms should be name=value&
             byte[] bytes = System.Text.Encoding.ASCII.GetBytes(jsonstr); //UTF8 - ?
             req.ContentLength = bytes.Length;
