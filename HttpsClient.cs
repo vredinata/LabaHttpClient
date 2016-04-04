@@ -156,6 +156,8 @@ namespace laba_http_client
             string FilePath = "file_path";
             string vklink = "https://vk.com/anyuser";
             string Subsystem2Ansver;
+            string filejson="";
+            int EncAlgType = 0; //0 -aes
             byte[] iv = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00 };
             byte[] key = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
@@ -166,14 +168,16 @@ namespace laba_http_client
             printLog("I started to work");
             try
             {
-                AuthData au = new AuthData("Subsystem1", "password");
-                string serialized = JsonConvert.SerializeObject(au);
-                Subsystem2Ansver = HttpPost(sendadr, serialized);
+                Subsystem2Ansver = AuthPost(sendadr); //возвращает ответ - токен?
                 printLog("Subsystem2Ansver: authorization "+Subsystem2Ansver);
 
-                string filejson = Convert.ToBase64String( AesEncruptAlg.Encrypt(createByteArr(FilePath), key, iv));
+                if (EncAlgType == 0)  // несколько видов шифрования??
+                { filejson = Convert.ToBase64String(AesEncruptAlg.Encrypt(createByteArr(FilePath), key, iv)); }
+                else
+                { throw new ArgumentNullException("No encription alg"); }
+               // string filejson = Convert.ToBase64String( AesEncruptAlg.Encrypt(createByteArr(FilePath), key, iv));  
                 OpbrData opbrdata = new OpbrData(vklink,filejson);
-                serialized = JsonConvert.SerializeObject(opbrdata);
+                string serialized = JsonConvert.SerializeObject(opbrdata);
                 Subsystem2Ansver = HttpPost(sendadr, serialized);
                 printLog("Subsystem2Ansver: authorization " + Subsystem2Ansver);
 
@@ -206,8 +210,21 @@ namespace laba_http_client
             printLog("Exit");
         }
 
-        public static string WebClientGet(string URI) { return "0"; }
-        public static HttpStatusCode WebClient(string URI, string jsonstr) { HttpStatusCode code= (HttpStatusCode)202; return code; }
+        
+        public static string AuthPost(string sendadr )
+        {
+           // string sendadr = "https://toadress.com";
+            AuthData au = new AuthData("Subsystem1", "password");
+            string serialized = JsonConvert.SerializeObject(au);
+            string ansver = HttpPost(sendadr, serialized);
+            // printLog("Subsystem2Ansver: authorization " + Subsystem2Ansver);
+            return ansver;
+        }
+
+        public static void AsynchPost(string URI, string jsonstr)
+        { 
+
+        }
 
         public static string HttpGet(string URI)
         {
@@ -217,7 +234,7 @@ namespace laba_http_client
             return sr.ReadToEnd().Trim();
         }
 
-        // public static HttpStatusCode HttpPost(string URI, string jsonstr)
+        // public static HttpStatusCode HttpPost(string URI, string jsonstr, string wtoken)
         public static string HttpPost(string URI, string jsonstr)
         {
             System.Net.WebRequest req = System.Net.WebRequest.Create(URI);
@@ -225,6 +242,8 @@ namespace laba_http_client
             //Add these, as we're doing a POST
             req.ContentType = "application/json";  //"application/x-www-form-urlencoded"
             req.Method = "POST";
+            //string tokensrt="Token: " + wtoken; //токен от второй подсистемы
+            //req.Headers.Add(tokenstr);
             //We need to count how many bytes we're sending. Post'ed Faked Forms should be name=value&
             byte[] bytes = System.Text.Encoding.ASCII.GetBytes(jsonstr); //UTF8 - ?
             req.ContentLength = bytes.Length;
